@@ -32,6 +32,14 @@ resource "aws_lambda_function" "s3" {
   tags = local.common_tags
 }
 
+resource "aws_lambda_permission" "s3" {
+  statement_id = "AllowS3LambdaInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.s3.arn
+  principal     = "s3.amazonaws.com"
+  source_arn = aws_s3_bucket.todo.arn
+}
+
 resource "aws_lambda_function" "dynamodb" {
   function_name = "dynamodb"
   handler = "index.handler"
