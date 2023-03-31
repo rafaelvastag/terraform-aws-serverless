@@ -10,12 +10,6 @@ resource "null_resource" "build_lambda_layer" {
 
 }
 
-data "archive_file" "s3" {
-  output_path = "files/s3-artefact.zip"
-  type        = "zip"
-  source_file = "${local.lambdas_path}/s3/index.js"
-}
-
 resource "aws_lambda_layer_version" "joi" {
   layer_name          = "joi-layer"
   description         = "joi 17.3.0"
@@ -36,4 +30,23 @@ resource "aws_lambda_function" "s3" {
   layers = [aws_lambda_layer_version.joi.arn]
 
   tags = local.common_tags
+}
+
+resource "aws_lambda_function" "dynamodb" {
+  function_name = "dynamodb"
+  handler = "index.handler"
+  role          = aws_iam_role.dynamo.arn
+  runtime = "nodejs14.x"
+  filename = data.archive_file.dynamodb.output_path
+
+  source_code_hash = data.archive_file.dynamodb.output_base64sha256
+
+  timeout = 30
+  memory_size = 128
+
+  environment {
+    variables = {
+      TABLE = aws_dynamodb_table.this.name
+    }
+  }
 }
